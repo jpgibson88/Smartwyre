@@ -1,9 +1,10 @@
 ﻿using Smartwyre.DeveloperTest.Data;
+using Smartwyre.DeveloperTest.Data.Interfaces;
 using Smartwyre.DeveloperTest.Types;
 
 namespace Smartwyre.DeveloperTest.Services;
 
-public class RebateService : IRebateService
+public class RebateService(IRebateDataStore rebateDataStore, IProductDataStore productDataStore) : IRebateService
 {
     public CalculateRebateResult Calculate(CalculateRebateRequest request)
     {
