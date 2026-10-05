@@ -1,5 +1,35 @@
 # Smartwyre Developer Test Instructions
 
+_________
+## Solution Notes
+
+### Changes
+- Each incentive type is validated and calculated by its own strategy class (`IIncentiveStrategy`), so `RebateService` only looks up data, picks the strategy for the rebate's incentive type and stores the result
+- Checks shared by every strategy (rebate and product exist, product supports the incentive) live in `IncentiveStrategyBase`
+- All dependencies (data stores and strategies) are injected through constructors
+- Strategies are discovered automatically and registered with the DI container in the Runner
+- Unit tests cover `RebateService` (with mocked strategies), each strategy, the full flow with the real strategies, and strategy discovery
+
+### Running the Runner
+```
+dotnet run --project Smartwyre.DeveloperTest.Runner -- <rebateId> <productId> <volume>
+```
+The Runner uses in-memory sample data (`Smartwyre.DeveloperTest.Runner/Data`) because the original data stores are placeholders that always return an empty rebate/product. Run it with no arguments to list the sample rebates and products. For example:
+- `cash-100 widget 1`: FixedCashAmount, stores 100
+- `uom-2 widget 10`: AmountPerUom, stores 20
+- `rate-10 widget 10`: FixedRateRebate, stores 20
+- `rate-10 gadget 10`: not valid, because gadget doesn't support FixedRateRebate
+
+Exit codes: `0` succeeded, `1` bad input or error, `2` calculation not valid.
+
+### To add a new incentive type
+1. Add the new type to both the `IncentiveType` and `SupportedIncentiveType` enums in `Smartwyre.DeveloperTest.Types` (use the same name in both)
+2. Add a strategy class that inherits from `IncentiveStrategyBase` in `Smartwyre.DeveloperTest.Strategies`
+
+The strategy is registered automatically. `IncentiveStrategyDiscoveryTests` fails if an incentive type has no strategy, has more than one, or uses a mismatched `SupportedIncentiveType`.
+_________
+
+
 You have been selected to complete our candidate coding exercise. Please follow the directions in this readme.
 
 Clone, **DO NOT FORK**, this repository to your account on the online Git resource of your choosing (GitHub, BitBucket, GitLab, etc.). Your solution should retain previous commit history and you should utilize best practices for committing your changes to the repository.
@@ -44,3 +74,4 @@ You are free to use any frameworks/NuGet packages that you see fit. You should p
 Feel free to use code comments to describe your changes. You are also welcome to update this readme with any important details for us to consider.
 
 Once you have completed the exercise either ensure your repository is available publicly or contact the hiring manager to set up a private share.
+
