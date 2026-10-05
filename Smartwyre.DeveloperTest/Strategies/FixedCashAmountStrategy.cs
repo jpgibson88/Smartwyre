@@ -2,27 +2,12 @@ using Smartwyre.DeveloperTest.Types;
 
 namespace Smartwyre.DeveloperTest.Strategies;
 
-public class FixedCashAmountStrategy : IIncentiveStrategy
+public class FixedCashAmountStrategy : IncentiveStrategyBase
 {
-    public IncentiveType Type => IncentiveType.FixedCashAmount;
+    public override IncentiveType Type => IncentiveType.FixedCashAmount;
     
-    public bool IsValid(Rebate rebate, Product product, CalculateRebateRequest request)
+    protected override bool Validate(Rebate rebate, Product product, CalculateRebateRequest request)
     {
-        if (rebate == null)
-        {
-            return false;
-        }
-
-        if (product == null)
-        {
-            return false;
-        }
-        
-        if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedCashAmount))
-        {
-            return false;
-        }
-        
         if (rebate.Amount == 0)
         {
             return false;
@@ -31,7 +16,7 @@ public class FixedCashAmountStrategy : IIncentiveStrategy
         return true;
     }
 
-    public decimal Calculate(Rebate rebate, Product product, CalculateRebateRequest request)
+    public override decimal Calculate(Rebate rebate, Product product, CalculateRebateRequest request)
     {
         return rebate.Amount;
     }
