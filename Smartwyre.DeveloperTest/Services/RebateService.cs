@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Smartwyre.DeveloperTest.Data;
 using Smartwyre.DeveloperTest.Data.Interfaces;
 using Smartwyre.DeveloperTest.Strategies;
 using Smartwyre.DeveloperTest.Types;
@@ -10,22 +9,22 @@ namespace Smartwyre.DeveloperTest.Services;
 
 public class RebateService(IRebateDataStore rebateDataStore, IProductDataStore productDataStore, IEnumerable<IIncentiveStrategy> incentiveStrategies) : IRebateService
 {
-    private Dictionary<IncentiveType, IIncentiveStrategy> _incentiveStrategies = incentiveStrategies.ToDictionary(strategy => strategy.Type, strategy => strategy);
-    
+    private readonly Dictionary<IncentiveType, IIncentiveStrategy> _incentiveStrategies = BuildLookup(incentiveStrategies);
+
     public CalculateRebateResult Calculate(CalculateRebateRequest request)
     {
         Rebate rebate = rebateDataStore.GetRebate(request.RebateIdentifier);
         Product product = productDataStore.GetProduct(request.ProductIdentifier);
 
-        if (!_incentiveStrategies.TryGetValue(rebate.Incentive, out var incentiveStrategy))
+        var result = new CalculateRebateResult();
+
+        if (rebate == null || !_incentiveStrategies.TryGetValue(rebate.Incentive, out var incentiveStrategy))
         {
-            throw new Exception("Unsupported incentive");
+            result.Success = false;
+            return result;
         }
-        
-        var result = new CalculateRebateResult
-        {
-            Success = incentiveStrategy.IsValid(rebate, product, request)
-        };
+
+        result.Success = incentiveStrategy.IsValid(rebate, product, request);
 
         if (result.Success)
         {
@@ -34,5 +33,23 @@ public class RebateService(IRebateDataStore rebateDataStore, IProductDataStore p
         }
 
         return result;
+    }
+
+    // Each incentive type must map to exactly one strategy
+    private static Dictionary<IncentiveType, IIncentiveStrategy> BuildLookup(IEnumerable<IIncentiveStrategy> strategies)
+    {
+        var lookup = new Dictionary<IncentiveType, IIncentiveStrategy>();
+
+        foreach (var strategy in strategies)
+        {
+            if (!lookup.TryAdd(strategy.Type, strategy))
+            {
+                throw new InvalidOperationException(
+                    $"Multiple strategies registered for incentive type {strategy.Type}: " +
+                    $"{lookup[strategy.Type].GetType().Name} and {strategy.GetType().Name}.");
+            }
+        }
+
+        return lookup;
     }
 }

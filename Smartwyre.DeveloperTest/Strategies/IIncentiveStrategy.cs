@@ -6,7 +6,7 @@ public interface IIncentiveStrategy
 {
     IncentiveType Type { get; }
     
-    bool IsValid (Rebate rebate, Product product, CalculateRebateRequest request);
+    bool IsValid(Rebate rebate, Product product, CalculateRebateRequest request);
     
-    decimal Calculate (Rebate rebate, Product product,  CalculateRebateRequest request);
+    decimal Calculate(Rebate rebate, Product product, CalculateRebateRequest request);
 }

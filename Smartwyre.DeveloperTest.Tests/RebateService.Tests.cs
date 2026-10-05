@@ -91,17 +91,21 @@ public class RebateServiceTests
     }
 
     [Fact]
-    public void Calculate_PassesRebateProductAndRequestToStrategy()
+    public void Calculate_RebateNotFound_ReturnsFailureAndDoesNotStore()
     {
-        var (rebate, product) = SetupData(IncentiveType.AmountPerUom);
-        var strategy = StrategyMock(IncentiveType.AmountPerUom, isValid: true, amount: 1m);
-        var request = Request(7m);
+        _rebateDataStore.Setup(s => s.GetRebate(RebateId)).Returns((Rebate)null);
+        _productDataStore.Setup(s => s.GetProduct(ProductId)).Returns(new Product { Identifier = ProductId });
+        var strategy = StrategyMock(IncentiveType.FixedRateRebate, isValid: true, amount: 10m);
         var service = CreateService(strategy.Object);
 
-        service.Calculate(request);
+        var result = service.Calculate(Request());
 
-        strategy.Verify(s => s.IsValid(rebate, product, request), Times.Once);
-        strategy.Verify(s => s.Calculate(rebate, product, request), Times.Once);
+        Assert.False(result.Success);
+        strategy.Verify(
+            s => s.IsValid(It.IsAny<Rebate>(), It.IsAny<Product>(), It.IsAny<CalculateRebateRequest>()),
+            Times.Never);
+        _rebateDataStore.Verify(
+            s => s.StoreCalculationResult(It.IsAny<Rebate>(), It.IsAny<decimal>()), Times.Never);
     }
 
     [Fact]
@@ -124,16 +128,41 @@ public class RebateServiceTests
     }
 
     [Fact]
-    public void Calculate_NoStrategyForIncentive_ThrowsAndDoesNotStore()
+    public void Calculate_PassesRebateProductAndRequestToStrategy()
+    {
+        var (rebate, product) = SetupData(IncentiveType.AmountPerUom);
+        var strategy = StrategyMock(IncentiveType.AmountPerUom, isValid: true, amount: 1m);
+        var request = Request(7m);
+        var service = CreateService(strategy.Object);
+
+        service.Calculate(request);
+
+        strategy.Verify(s => s.IsValid(rebate, product, request), Times.Once);
+        strategy.Verify(s => s.Calculate(rebate, product, request), Times.Once);
+    }
+
+    [Fact]
+    public void Calculate_NoStrategyForIncentive_ReturnsFailure()
     {
         SetupData(IncentiveType.FixedRateRebate);
         var service = CreateService(StrategyMock(IncentiveType.AmountPerUom, isValid: true).Object);
 
-        var exception = Assert.Throws<Exception>(() => service.Calculate(Request()));
+        var result = service.Calculate(Request());
 
-        Assert.Equal("Unsupported incentive", exception.Message);
+        Assert.False(result.Success);
         _rebateDataStore.Verify(
             s => s.StoreCalculationResult(It.IsAny<Rebate>(), It.IsAny<decimal>()), Times.Never);
+    }
+
+    [Fact]
+    public void Constructor_TwoStrategiesForSameIncentive_Throws()
+    {
+        var first = StrategyMock(IncentiveType.AmountPerUom, isValid: true).Object;
+        var second = StrategyMock(IncentiveType.AmountPerUom, isValid: true).Object;
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CreateService(first, second));
+
+        Assert.Contains(nameof(IncentiveType.AmountPerUom), exception.Message);
     }
 
     /// <summary>
