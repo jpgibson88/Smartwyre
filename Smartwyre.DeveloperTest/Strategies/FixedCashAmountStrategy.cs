@@ -6,6 +6,9 @@ public class FixedCashAmountStrategy : IncentiveStrategyBase
 {
     public override IncentiveType Type => IncentiveType.FixedCashAmount;
     
+    public override SupportedIncentiveType RequiredSupport => SupportedIncentiveType.FixedCashAmount;
+
+
     protected override bool Validate(Rebate rebate, Product product, CalculateRebateRequest request)
     {
         if (rebate.Amount == 0)

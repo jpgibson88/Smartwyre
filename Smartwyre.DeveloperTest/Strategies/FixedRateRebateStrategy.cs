@@ -5,7 +5,9 @@ namespace Smartwyre.DeveloperTest.Strategies;
 public class FixedRateRebateStrategy : IncentiveStrategyBase
 {
     public override IncentiveType Type => IncentiveType.FixedRateRebate;
-    
+
+    public override SupportedIncentiveType RequiredSupport => SupportedIncentiveType.FixedRateRebate;
+
     protected override bool Validate(Rebate rebate, Product product, CalculateRebateRequest request)
     {
         if (rebate.Percentage == 0 || product.Price == 0 || request.Volume == 0)

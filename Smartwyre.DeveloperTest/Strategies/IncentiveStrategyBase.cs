@@ -4,7 +4,11 @@ namespace Smartwyre.DeveloperTest.Strategies;
 
 public abstract class IncentiveStrategyBase : IIncentiveStrategy
 {
+    // IncentiveType of rebate
     public abstract IncentiveType Type { get; }
+    
+    // IncentiveType supported by the product
+    public abstract SupportedIncentiveType RequiredSupport { get; }
     
     // Shared base validation for all strategies
     public bool IsValid(Rebate rebate, Product product, CalculateRebateRequest request)
@@ -19,7 +23,7 @@ public abstract class IncentiveStrategyBase : IIncentiveStrategy
             return false;
         }
         
-        if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedRateRebate))
+        if (!product.SupportedIncentives.HasFlag(RequiredSupport))
         {
             return false;
         }

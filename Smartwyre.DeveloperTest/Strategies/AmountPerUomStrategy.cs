@@ -6,6 +6,8 @@ public class AmountPerUomStrategy : IncentiveStrategyBase
 {
     public override IncentiveType Type => IncentiveType.AmountPerUom;
     
+    public override SupportedIncentiveType  RequiredSupport => SupportedIncentiveType.AmountPerUom;
+    
     protected override bool Validate(Rebate rebate, Product product, CalculateRebateRequest request)
     {
         if (rebate.Amount == 0 || request.Volume == 0)
